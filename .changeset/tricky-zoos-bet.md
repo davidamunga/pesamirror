@@ -1,5 +1,0 @@
----
-"pesamirror": patch
----
-
-initial release
