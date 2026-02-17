@@ -45,6 +45,7 @@ class UssdAccessibilityService : AccessibilityService() {
             val mode = prefs.getString(MainActivity.KEY_USSD_MODE, MainActivity.MODE_SEND_MONEY) ?: MainActivity.MODE_SEND_MONEY
             val firstState = when (mode) {
                 MainActivity.MODE_SEND_MONEY -> SM_1
+                MainActivity.MODE_POCHI -> POCHI_1
                 MainActivity.MODE_TILL -> TILL_6
                 MainActivity.MODE_PAYBILL -> PB_6
                 MainActivity.MODE_WITHDRAW -> WD_2
@@ -122,13 +123,20 @@ class UssdAccessibilityService : AccessibilityService() {
             return true
         }
 
-        when (state) {
+            when (state) {
             // --- Send Money: 1 -> 1 -> phone -> amount -> pin ---
             SM_1 -> typeAndSend("1", SM_2)
             SM_2 -> typeAndSend("1", SM_PHONE)
             SM_PHONE -> typeField(prefs.getString(MainActivity.KEY_USSD_PHONE, "") ?: "", SM_AMOUNT, "phone", "number")
             SM_AMOUNT -> typeField(prefs.getString(MainActivity.KEY_USSD_AMOUNT, "") ?: "", SM_PIN, "amount")
             SM_PIN -> finishPin()
+
+            // --- Pochi la Biashara: 1 -> 3 -> phone -> amount -> pin ---
+            POCHI_1 -> typeAndSend("1", POCHI_3)
+            POCHI_3 -> typeAndSend("3", POCHI_PHONE)
+            POCHI_PHONE -> typeField(prefs.getString(MainActivity.KEY_USSD_PHONE, "") ?: "", POCHI_AMOUNT, "phone", "number")
+            POCHI_AMOUNT -> typeField(prefs.getString(MainActivity.KEY_USSD_AMOUNT, "") ?: "", POCHI_PIN, "amount")
+            POCHI_PIN -> finishPin()
 
             // --- Till (Lipa na M-PESA): 6 -> 2 -> till -> amount -> pin ---
             TILL_6 -> typeAndSend("6", TILL_2)
@@ -383,6 +391,11 @@ class UssdAccessibilityService : AccessibilityService() {
         private const val SM_PHONE = "SM_PHONE"
         private const val SM_AMOUNT = "SM_AMOUNT"
         private const val SM_PIN = "SM_PIN"
+        private const val POCHI_1 = "POCHI_1"
+        private const val POCHI_3 = "POCHI_3"
+        private const val POCHI_PHONE = "POCHI_PHONE"
+        private const val POCHI_AMOUNT = "POCHI_AMOUNT"
+        private const val POCHI_PIN = "POCHI_PIN"
         private const val TILL_6 = "TILL_6"
         private const val TILL_2 = "TILL_2"
         private const val TILL_NUM = "TILL_NUM"

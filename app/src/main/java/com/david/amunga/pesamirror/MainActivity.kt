@@ -167,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         val storeLayout = findViewById<View>(R.id.storeLayout)
         val items = listOf(
             getString(R.string.type_send_money),
+            getString(R.string.type_pochi_biashara),
             getString(R.string.type_paybill),
             getString(R.string.type_till_number),
             getString(R.string.type_withdraw_cash)
@@ -176,7 +177,7 @@ class MainActivity : AppCompatActivity() {
         select.setText(getString(R.string.type_send_money), false)
         fun updateVisibility(mode: String) {
             when (mode) {
-                MODE_SEND_MONEY -> {
+                MODE_SEND_MONEY, MODE_POCHI -> {
                     phoneLayout.visibility = View.VISIBLE
                     tillLayout.visibility = View.GONE
                     businessLayout.visibility = View.GONE
@@ -219,9 +220,10 @@ class MainActivity : AppCompatActivity() {
             updateVisibility(
                 when (position) {
                     0 -> MODE_SEND_MONEY
-                    1 -> MODE_PAYBILL
-                    2 -> MODE_TILL
-                    3 -> MODE_WITHDRAW
+                    1 -> MODE_POCHI
+                    2 -> MODE_PAYBILL
+                    3 -> MODE_TILL
+                    4 -> MODE_WITHDRAW
                     else -> MODE_SEND_MONEY
                 }
             )
@@ -243,6 +245,7 @@ class MainActivity : AppCompatActivity() {
                 .orEmpty()
         return when {
             text == getString(R.string.type_send_money) -> MODE_SEND_MONEY
+            text == getString(R.string.type_pochi_biashara) -> MODE_POCHI
             text == getString(R.string.type_paybill) -> MODE_PAYBILL
             text == getString(R.string.type_till_number) -> MODE_TILL
             text == getString(R.string.type_withdraw_cash) -> MODE_WITHDRAW
@@ -281,7 +284,7 @@ class MainActivity : AppCompatActivity() {
         }
         val mode = getTransactionMode()
         when (mode) {
-            MODE_SEND_MONEY -> {
+            MODE_SEND_MONEY, MODE_POCHI -> {
                 val phone =
                     findViewById<TextInputEditText>(R.id.phoneInput).text?.toString()?.trim()
                 if (phone.isNullOrBlank()) {
@@ -542,6 +545,7 @@ class MainActivity : AppCompatActivity() {
         const val KEY_FIRST_LAUNCH_DONE = "first_launch_done"
         const val KEY_TUTORIAL_SHOWN = "tutorial_shown"
         const val MODE_SEND_MONEY = "SEND_MONEY"
+        const val MODE_POCHI = "POCHI"
         const val MODE_PAYBILL = "PAYBILL"
         const val MODE_TILL = "TILL"
         const val MODE_WITHDRAW = "WITHDRAW"

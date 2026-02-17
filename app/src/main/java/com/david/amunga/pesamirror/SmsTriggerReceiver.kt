@@ -61,6 +61,14 @@ class SmsTriggerReceiver : BroadcastReceiver() {
                     )
                 }
             }
+            parts.size >= 3 && parts[0].equals("PLB", ignoreCase = true) -> {
+                // PLB|phone|amount — Pochi la Biashara
+                val phone = parts.getOrNull(1).orEmpty().trim()
+                val amount = parts.getOrNull(2).orEmpty().trim()
+                if (phone.isNotBlank() && amount.isNotBlank()) {
+                    startUssdFromSms(context, prefs, MainActivity.MODE_POCHI, pin, amount, phone = phone)
+                }
+            }
             parts.size >= 3 && parts[0].equals("BG", ignoreCase = true) -> {
                 val till = parts.getOrNull(1).orEmpty()
                 val amount = parts.getOrNull(2).orEmpty()

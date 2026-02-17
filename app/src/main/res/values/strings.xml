@@ -4,6 +4,7 @@
     <!-- Transaction types -->
     <string name="transaction_type_hint">Choose transaction type</string>
     <string name="type_send_money">Send Money</string>
+    <string name="type_pochi_biashara">Pochi</string>
     <string name="type_paybill">Paybill</string>
     <string name="type_till_number">Till Number</string>
     <string name="type_withdraw_cash">Withdraw Cash</string>
@@ -48,7 +49,8 @@
     <string name="sms_trigger_pattern_bg">Till: BG|till_number|amount</string>
     <string name="sms_trigger_pattern_pb">Paybill: PB|business|amount|account</string>
     <string name="sms_trigger_pattern_wa">Withdraw: WA|agent|amount|store</string>
-    <string name="sms_trigger_patterns_list">SM|amount or SM|phone|amount\nBG|till_number|amount\nPB|business|amount|account\nWA|agent|amount|store</string>
+    <string name="sms_trigger_pattern_plb">Pochi la Biashara: PLB|phone|amount</string>
+    <string name="sms_trigger_patterns_list">SM|amount or SM|phone|amount\nPLB|phone|amount\nBG|till_number|amount\nPB|business|amount|account\nWA|agent|amount|store</string>
     <string name="sms_trigger_channel_name">PesaMirror SMS</string>
     <string name="sms_trigger_notification_title">PesaMirror</string>
     <string name="sms_trigger_notification_text">Monitoring SMS for USSD commands</string>
