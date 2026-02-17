@@ -1,0 +1,12 @@
+{
+  "name": "pesamirror",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automate M-Pesa USSD on Android",
+  "scripts": {
+    "version": "changeset version && node scripts/sync-android-version.cjs"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10"
+  }
+}
