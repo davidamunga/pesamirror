@@ -66,21 +66,44 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
 
+      - name: Locate and copy APK
+        id: apk
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          APK_PATH=$(find app/build/outputs/apk -name "*.apk" -path "*release*" 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "No release APK found. Contents of app/build/outputs/apk:"
+            find app/build/outputs/apk -type f 2>/dev/null || true
+            exit 1
+          fi
+          APK_NAME="PesaMirror-${TAG}.apk"
+          cp "$APK_PATH" "./${APK_NAME}"
+          echo "name=${APK_NAME}" >> $GITHUB_OUTPUT
+          echo "path=./${APK_NAME}" >> $GITHUB_OUTPUT
+          echo "Using APK: $APK_NAME"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: ./${{ steps.apk.outputs.name }}
 
       - name: Prepare release notes
         id: release_notes
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          APK_NAME: ${{ steps.apk.outputs.name }}
+          REPO: ${{ github.repository }}
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          BODY="# PesaMirror ${TAG}\n\n"
+          DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/${APK_NAME}"
+          BODY="## Download\n\n"
+          BODY="${BODY}[**Download PesaMirror ${TAG} (APK)**](${DOWNLOAD_URL})\n\n"
+          BODY="${BODY}---\n\n## Changelog\n\n"
           if [ -f "app/CHANGELOG.md" ] && [ -s "app/CHANGELOG.md" ]; then
-            BODY="${BODY}## Changelog\n\n$(cat app/CHANGELOG.md)\n"
+            BODY="${BODY}$(cat app/CHANGELOG.md)\n"
           elif [ -f "CHANGELOG.md" ] && [ -s "CHANGELOG.md" ]; then
-            BODY="${BODY}## Changelog\n\n$(cat CHANGELOG.md)\n"
+            BODY="${BODY}$(cat CHANGELOG.md)\n"
           else
             BODY="${BODY}*Changelog will be updated from Changesets when available.*\n"
           fi
@@ -94,6 +117,6 @@ jobs:
           name: PesaMirror ${{ steps.version.outputs.tag }}
           body_path: release_body.md
           draft: false
-          files: app/build/outputs/apk/release/app-release.apk
+          files: ./${{ steps.apk.outputs.name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
