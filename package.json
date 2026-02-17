@@ -1,6 +1,6 @@
 {
   "name": "pesamirror",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "description": "Automate M-Pesa USSD on Android",
   "scripts": {
