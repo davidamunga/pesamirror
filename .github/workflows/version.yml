@@ -23,7 +23,7 @@ jobs:
       - name: Version (changesets + sync Android)
         uses: changesets/action@v1
         with:
-          version: "changeset version && node scripts/sync-android-version.cjs"
+          version: "npx changeset version && node scripts/sync-android-version.cjs"
           commit: "Version Packages"
           title: "Version Packages"
           createGithubReleases: false
