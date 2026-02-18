@@ -69,23 +69,42 @@ export function NumericKeypadDrawer({
     'select' in (navigator as { contacts?: { select?: unknown } }).contacts!
 
   async function pickContact() {
-    if (!hasContactsApi) {
+    if (
+      !('contacts' in navigator) ||
+      !(
+        'select' in
+        (
+          navigator as {
+            contacts?: {
+              select: (props: {
+                multiple?: boolean
+              }) => Promise<Array<{ tel?: Array<string> }>>
+            }
+          }
+        ).contacts!
+      )
+    ) {
       alert(
-        'Contact picker is not supported in this browser. Try Chrome on Android.',
+        'Contact picker is not supported in this browser. Try Chrome on Android or a recent Android WebView.',
       )
       return
     }
     try {
-      const contacts = await (
-        navigator as unknown as {
+      const contactsManager = (
+        navigator as {
           contacts: {
-            select: (opts: {
-              multiple?: boolean
-            }) => Promise<Array<{ tel?: Array<string> }>>
+            select: (
+              props: Array<string>,
+            ) => Promise<Array<{ tel?: Array<string> }>>
+            getProperties: () => Promise<Array<string>>
           }
         }
-      ).contacts.select({ multiple: false })
-      const tel = contacts[0]?.tel?.[0] ?? ''
+      ).contacts
+
+      const propertiesAvailable = await contactsManager.getProperties()
+      const contacts = await contactsManager.select(propertiesAvailable)
+      const contact = contacts[0]
+      const tel = contact.tel?.[0] ?? ''
       if (tel) {
         const normalized = tel.replace(/\s+/g, '').replace(/^\+254/, '0')
         onChange(normalized)
@@ -100,7 +119,6 @@ export function NumericKeypadDrawer({
       }
     }
   }
-
   function handleDigit(digit: string) {
     setDraft((prev) => prev + digit)
   }
