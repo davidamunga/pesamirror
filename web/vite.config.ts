@@ -20,7 +20,19 @@ const config = defineConfig({
       projects: ['./tsconfig.json'],
     }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(
+      process.env.GH_PAGES === 'true'
+        ? {
+            spa: {
+              enabled: true,
+              prerender: {
+                enabled: true,
+                crawlLinks: true,
+              },
+            },
+          }
+        : {},
+    ),
     viteReact(),
   ],
 })

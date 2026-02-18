@@ -47,8 +47,14 @@ jobs:
 
       - name: Prepare static output
         run: |
+          # SPA + prerender writes index.html to dist/client
+          if [ ! -f "dist/client/index.html" ]; then
+            echo "dist/client/index.html not found. Build output:"
+            find dist -name "index.html" 2>/dev/null || echo "(no index.html anywhere)"
+            exit 1
+          fi
           cp -r dist/client ../dist-client
-          # SPA fallback: serve index.html for any unknown path
+          # SPA fallback: GitHub Pages serves 404.html for unknown paths
           cp ../dist-client/index.html ../dist-client/404.html
 
       - name: Upload artifact
