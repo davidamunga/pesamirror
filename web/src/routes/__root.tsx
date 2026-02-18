@@ -21,7 +21,9 @@ function RegisterSw() {
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       const base =
-        typeof import.meta.env.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'
+        typeof import.meta.env.BASE_URL === 'string'
+          ? import.meta.env.BASE_URL
+          : '/'
       navigator.serviceWorker.register(`${base}sw.js`).catch(() => {})
     }
   }, [])
@@ -34,14 +36,26 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'PesaMirror' },
-      { name: 'theme-color', content: '#fafafa', media: '(prefers-color-scheme: light)' },
-      { name: 'theme-color', content: '#0a0a0a', media: '(prefers-color-scheme: dark)' },
+      {
+        name: 'theme-color',
+        content: '#fafafa',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        name: 'theme-color',
+        content: '#0a0a0a',
+        media: '(prefers-color-scheme: dark)',
+      },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
       {
         rel: 'manifest',
-        href: `${typeof import.meta.env.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'}manifest.json`,
+        href: `/pesamirror/manifest.json`,
+      },
+      {
+        rel: 'icon',
+        href: `/pesamirror/favicon.ico`,
       },
     ],
     scripts: [{ id: 'dark-mode', children: darkModeScript }],
@@ -67,4 +81,3 @@ function RootComponent() {
     </html>
   )
 }
-
