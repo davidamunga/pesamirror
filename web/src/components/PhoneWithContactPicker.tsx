@@ -49,10 +49,18 @@ export function PhoneWithContactPicker({
     }
     try {
       const contactsManager = (
-        navigator as { contacts: { select: (props: Array<string>) => Promise<Array<{ tel?: Array<string> }>> } }
+        navigator as {
+          contacts: {
+            select: (
+              props: Array<string>,
+            ) => Promise<Array<{ tel?: Array<string> }>>
+            getProperties: () => Promise<Array<string>>
+          }
+        }
       ).contacts
-      const properties = ['tel'] as const
-      const contacts = await contactsManager.select([...properties])
+
+      const propertiesAvailable = await contactsManager.getProperties()
+      const contacts = await contactsManager.select(propertiesAvailable)
       const contact = contacts[0]
       const tel = contact.tel?.[0] ?? ''
       if (tel) {
