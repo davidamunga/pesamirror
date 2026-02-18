@@ -95,6 +95,7 @@ export function NumericKeypadDrawer({
         (err as Error).name !== 'SecurityError' &&
         (err as Error).name !== 'AbortError'
       ) {
+        console.error('Contact picker error:', err)
         alert('Could not open contacts.')
       }
     }

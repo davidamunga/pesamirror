@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import {
   HeadContent,
   Outlet,
@@ -16,17 +15,6 @@ const darkModeScript = `
   document.documentElement.classList.toggle('dark', dark);
 })();
 `
-
-function RegisterSw() {
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-      const base =
-        typeof import.meta.env.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'
-      navigator.serviceWorker.register(`${base}sw.js`).catch(() => {})
-    }
-  }, [])
-  return null
-}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -56,7 +44,6 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body className="flex min-h-screen flex-col bg-background text-foreground antialiased">
-        <RegisterSw />
         <Header />
         <main className="flex-1">
           <Outlet />

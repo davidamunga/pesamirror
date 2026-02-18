@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { BookUser } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -25,7 +26,6 @@ export function PhoneWithContactPicker({
   className?: string
 }) {
   const errors = field.state.meta.errors
-
   async function pickContact() {
     if (
       !('contacts' in navigator) ||
@@ -97,14 +97,14 @@ export function PhoneWithContactPicker({
           onChange={(e) => field.handleChange(e.target.value)}
           className={cn('flex-1', className)}
         />
-        {hasContactsApi && (
+        {!hasContactsApi && (
           <Button
             type="button"
             variant="outline"
             onClick={pickContact}
-            title="Select from contacts"
+            className="h-full"
           >
-            Contacts
+            <BookUser className="size-4" />
           </Button>
         )}
       </div>
