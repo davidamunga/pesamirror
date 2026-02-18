@@ -2,6 +2,7 @@ import { Github } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
 const GITHUB_URL = 'https://github.com/davidamunga/pesamirror'
+const BASE = typeof import.meta.env.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'
 
 export default function Header() {
   return (
@@ -12,7 +13,7 @@ export default function Header() {
             to="/"
             className="flex items-center gap-2 text-foreground hover:text-foreground/90"
           >
-            <img src="/logo.png" alt="PesaMirror" className="size-12" />
+            <img src={`${BASE}logo.png`} alt="PesaMirror" className="size-12" />
             <span className="text-5xl">PesaMirror</span>
           </Link>
         </h1>
