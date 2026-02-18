@@ -40,6 +40,13 @@ const smsFormSchema = z
         message: msg,
       })
     }
+    if (!data.receiver.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['receiver'],
+        message: msg,
+      })
+    }
     const mode = data.transactionType as TransactionMode
     if (mode === 'SEND_MONEY' || mode === 'POCHI') {
       if (!data.phone.trim()) {
@@ -286,7 +293,7 @@ function Home() {
                 value={field.value}
                 onChange={field.onChange}
                 label="Send to (receiver phone number)"
-                placeholder="e.g. 0712345678 — optional"
+                placeholder="e.g. 0712345678"
                 enableContacts
               />
             )}
