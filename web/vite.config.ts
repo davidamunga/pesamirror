@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
-  base: process.env.GH_PAGES === 'true' ? '/pesamirror/' : '/',
+  base: '/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

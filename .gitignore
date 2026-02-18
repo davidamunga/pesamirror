@@ -11,6 +11,9 @@ build/
 # Local configuration (SDK path, etc.)
 local.properties
 
+# Firebase project (personal deploy; create from .firebaserc.example)
+.firebaserc
+
 # Android Studio / IntelliJ
 *.iml
 .idea/

@@ -4,7 +4,8 @@
   "private": true,
   "description": "Automate M-Pesa USSD on Android",
   "scripts": {
-    "version": "changeset version && node scripts/sync-android-version.cjs"
+    "version": "changeset version && node scripts/sync-android-version.cjs",
+    "deploy:web": "cd web && pnpm run build && cd .. && firebase deploy --only hosting"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10"
