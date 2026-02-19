@@ -161,8 +161,17 @@ function Home() {
         )
         return
       }
-      await triggerFCMEvent(config, 'ussd-trigger', { body })
-      toast.success('FCM push sent.')
+      try {
+        await triggerFCMEvent(config, 'ussd-trigger', { body })
+        toast.success('Push sent to device.')
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Push failed.'
+        toast.error(
+          message.startsWith('FCM error')
+            ? `Remote push failed. Check internet and FCM settings.`
+            : message,
+        )
+      }
       return
     }
 
@@ -378,7 +387,7 @@ function Home() {
 
         <p className="mt-6 text-xs text-muted-foreground text-center">
           {isSms
-            ? 'Opens your default SMS app with the message filled. Send to your number (with PesaMirror app) to trigger USSD, or use your own flow.'
+            ? 'Opens your default SMS app with the message filled. Send to your number (with PesaMirror app) to trigger USSD, or use your own flow. Works fully offline.'
             : 'Sends an FCM push notification directly to your device running the PesaMirror app. Configure settings via the gear icon.'}
         </p>
 

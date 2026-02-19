@@ -10,6 +10,13 @@
  * app even when killed; no persistent connection needed).
  */
 
+import {
+  decryptPlaintext,
+  encryptPlaintext,
+  isEncryptedBlob,
+} from './crypto-storage'
+import type { EncryptedBlob } from './crypto-storage'
+
 export interface ServiceAccount {
   type?: string
   project_id: string
@@ -26,27 +33,98 @@ export interface FCMConfig {
 }
 
 const STORAGE_KEY = 'pesamirror_fcm_config'
+const SESSION_KEY = 'pesamirror_fcm_config_session'
 
-export function loadFCMConfig(): FCMConfig | null {
+function parsePlainConfig(raw: string): FCMConfig | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const sa = parsed.serviceAccount as ServiceAccount | undefined
-    if (!sa?.project_id || !sa?.private_key || !sa?.client_email) return null
-    if (!(parsed.deviceToken as string)?.trim()) return null
+    if (!sa || !sa.project_id || !sa.private_key || !sa.client_email) return null
+    const token = parsed.deviceToken as string
+    if (!token || !token.trim()) return null
     return parsed as unknown as FCMConfig
   } catch {
     return null
   }
 }
 
-export function saveFCMConfig(config: FCMConfig): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+/** True if stored config is passphrase-encrypted (requires unlock). */
+export function isFCMConfigEncrypted(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw !== null && isEncryptedBlob(raw)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Load FCM config. Returns session-unlocked config if available, else plain
+ * localStorage config. Returns null if storage is empty or encrypted and not unlocked.
+ */
+export function loadFCMConfig(): FCMConfig | null {
+  try {
+    const session = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(SESSION_KEY) : null
+    if (session) {
+      const parsed = parsePlainConfig(session)
+      if (parsed) return parsed
+    }
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    if (isEncryptedBlob(raw)) return null
+    return parsePlainConfig(raw)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Unlock encrypted FCM config with passphrase. On success, decrypted config
+ * is stored in sessionStorage for this tab so loadFCMConfig() returns it.
+ */
+export async function unlockFCMConfig(passphrase: string): Promise<boolean> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw || !isEncryptedBlob(raw)) return false
+    const blob = JSON.parse(raw) as EncryptedBlob
+    const plain = await decryptPlaintext(blob, passphrase)
+    const config = parsePlainConfig(plain)
+    if (!config) return false
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(SESSION_KEY, plain)
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Save FCM config. If passphrase is provided, config is encrypted at rest.
+ * Decrypted config is also written to sessionStorage so it's available without
+ * unlocking again in this tab.
+ */
+export async function saveFCMConfig(
+  config: FCMConfig,
+  passphrase?: string,
+): Promise<void> {
+  const plain = JSON.stringify(config)
+  if (passphrase && passphrase.trim()) {
+    const blob = await encryptPlaintext(plain, passphrase.trim())
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(blob))
+  } else {
+    localStorage.setItem(STORAGE_KEY, plain)
+  }
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(SESSION_KEY, plain)
+  }
 }
 
 export function clearFCMConfig(): void {
   localStorage.removeItem(STORAGE_KEY)
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(SESSION_KEY)
+  }
 }
 
 // ── JWT / OAuth2 helpers ─────────────────────────────────────────────────────
@@ -55,7 +133,7 @@ function base64url(input: Uint8Array | string): string {
   const bytes =
     typeof input === 'string' ? new TextEncoder().encode(input) : input
   let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  for (const byte of bytes) binary += String.fromCharCode(byte)
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
@@ -66,7 +144,9 @@ function pemToBuffer(pem: string): ArrayBuffer {
     .replace(/[\r\n\s]/g, '')
   const binary = atob(b64)
   const buf = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) buf[i] = binary.charCodeAt(i)
+  Array.from(binary).forEach((char, i) => {
+    buf[i] = char.charCodeAt(0)
+  })
   return buf.buffer
 }
 

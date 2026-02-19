@@ -14,8 +14,8 @@ export default function Header() {
             to="/"
             className="flex items-center gap-2 text-foreground hover:text-foreground/90"
           >
-            <img src={`${BASE}logo.png`} alt="PesaMirror" className="size-12" />
-            <span className="text-5xl">PesaMirror</span>
+            <img src={`${BASE}logo.png`} alt="PesaMirror" className="size-10" />
+            <span className="text-3xl">PesaMirror</span>
           </Link>
         </h1>
         <div className="flex items-center gap-1">

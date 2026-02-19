@@ -5,6 +5,7 @@ import {
   createRootRoute,
 } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
+import { AddToHomeScreenHint } from '../components/AddToHomeScreenHint'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 
@@ -49,6 +50,7 @@ function RootComponent() {
       <body className="flex min-h-screen flex-col bg-background text-foreground antialiased">
         <Header />
         <main className="flex-1">
+          <AddToHomeScreenHint />
           <Outlet />
         </main>
         <Footer />
