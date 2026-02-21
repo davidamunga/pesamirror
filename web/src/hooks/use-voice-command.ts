@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ParsedIntent } from '@/lib/intent'
+import type { VoiceContact } from '@/lib/voice-contacts'
 import { describeIntent, parseIntent } from '@/lib/intent'
 import { isSpeechRecognitionSupported, listenOnce } from '@/lib/stt'
 import { cancelSpeech, speak } from '@/lib/tts'
@@ -9,6 +10,21 @@ import {
   resolvePhoneOrName,
   saveVoiceContact,
 } from '@/lib/voice-contacts'
+
+/**
+ * Convert a resolved VoiceContact + amount into the correct ParsedIntent type.
+ * Returns null for paybill contacts that are missing an account number.
+ */
+function contactToIntent(contact: VoiceContact, amount: string): ParsedIntent | null {
+  const type = contact.type ?? 'mobile'
+  if (type === 'till') return { type: 'TILL', amount, till: contact.phone }
+  if (type === 'paybill') {
+    if (!contact.accountNumber) return null
+    return { type: 'PAYBILL', amount, business: contact.phone, account: contact.accountNumber }
+  }
+  if (type === 'pochi') return { type: 'POCHI', amount, phone: contact.phone }
+  return { type: 'SEND_MONEY', amount, phone: contact.phone }
+}
 
 export type VoiceCommandState =
   | 'idle'
@@ -114,94 +130,73 @@ export function useVoiceCommand(
     transcriptRef.current = raw
     setState('processing')
 
-    const intent = parseIntent(raw)
-    if (!intent) {
+    const parsed = parseIntent(raw)
+    if (!parsed) {
       setError(
         "Sorry, I didn't catch that. Try: send 500 shillings to 0712345678.",
       )
       return
     }
 
-    // Resolve contact name → phone for SEND_MONEY / POCHI
-    if (intent.type === 'SEND_MONEY' || intent.type === 'POCHI') {
-      const resolved = resolvePhoneOrName(intent.phone)
-      if (resolved) {
-        intent.phone = resolved
-      } else if (!/^\d/.test(intent.phone.replace(/[\s\-()+]/g, ''))) {
-        setError(
-          `I couldn't find "${intent.phone}" in your contacts. Add them first, or say a phone number directly.`,
-        )
-        return
-      }
-    }
+    // --- Resolve the intent to a concrete action ---
+    // "send X to Name" / "pochi X to Name" may match any contact type.
+    // "pay Name X" (NAMED_PAYMENT) is also resolved here.
+    // All paths produce a single finalIntent used for the shared confirmation flow.
+    let finalIntent: ParsedIntent = parsed
 
-    // Resolve named till/paybill/mobile contacts
-    if (intent.type === 'NAMED_PAYMENT') {
-      const contact = resolveContact(intent.contactName)
-      if (!contact) {
-        setError(
-          `I couldn't find "${intent.contactName}" in your contacts. Add it first under Voice Contacts.`,
-        )
-        return
-      }
-      const contactType = contact.type ?? 'mobile'
-      let resolvedIntent: ParsedIntent
-      if (contactType === 'till') {
-        resolvedIntent = { type: 'TILL', amount: intent.amount, till: contact.phone }
-      } else if (contactType === 'paybill') {
-        if (!contact.accountNumber) {
+    if (parsed.type === 'SEND_MONEY' || parsed.type === 'POCHI') {
+      const nameQuery = parsed.phone
+      const resolvedPhone = resolvePhoneOrName(nameQuery)
+      if (resolvedPhone) {
+        finalIntent = { ...parsed, phone: resolvedPhone }
+      } else if (!/^\d/.test(nameQuery.replace(/[\s\-()+]/g, ''))) {
+        // Not a raw phone number — look up by name across all contact types
+        const contact = resolveContact(nameQuery)
+        if (!contact) {
           setError(
-            `${contact.name} needs an account number. Edit the contact to add one, or say: pay bill ${contact.phone} account <number> ${intent.amount}`,
+            `I couldn't find "${nameQuery}" in your contacts. Add them first, or say a phone number directly.`,
           )
           return
         }
-        resolvedIntent = { type: 'PAYBILL', amount: intent.amount, business: contact.phone, account: contact.accountNumber }
-      } else if (contactType === 'pochi') {
-        resolvedIntent = { type: 'POCHI', amount: intent.amount, phone: contact.phone }
-      } else {
-        resolvedIntent = { type: 'SEND_MONEY', amount: intent.amount, phone: contact.phone }
+        const resolved = contactToIntent(contact, parsed.amount)
+        if (!resolved) {
+          setError(
+            `${contact.name} needs an account number. Edit the contact to add one, or say: pay bill ${contact.phone} account <number> ${parsed.amount}`,
+          )
+          return
+        }
+        finalIntent = resolved
       }
-      setPendingIntent(resolvedIntent)
-      pendingIntentRef.current = resolvedIntent
-      setState('confirming')
-      const description = describeIntent(resolvedIntent)
-      try {
-        await speak(`${description} Say yes to confirm, or no to cancel.`)
-      } catch {
-        // TTS unavailable — on-screen buttons serve as fallback
-      }
-      setState('awaiting_confirmation')
-      let response: string
-      try {
-        response = await listenOnce('en-US')
-      } catch {
-        setState('confirming')
-        speak("I couldn't hear you. Tap yes or no on screen.").catch(() => {})
+    } else if (parsed.type === 'NAMED_PAYMENT') {
+      const contact = resolveContact(parsed.contactName)
+      if (!contact) {
+        setError(
+          `I couldn't find "${parsed.contactName}" in your contacts. Add it first under Voice Contacts.`,
+        )
         return
       }
-      if (/^(yes|yeah|yep|yup|confirm|send|do it|go|ok|okay)/i.test(response.trim())) {
-        executeConfirm(resolvedIntent, raw)
-      } else {
-        speak('Okay, no problem. Cancelled.').catch(() => {})
-        reset()
-        onDismiss?.()
+      const resolved = contactToIntent(contact, parsed.amount)
+      if (!resolved) {
+        setError(
+          `${contact.name} needs an account number. Edit the contact to add one, or say: pay bill ${contact.phone} account <number> ${parsed.amount}`,
+        )
+        return
       }
-      return
+      finalIntent = resolved
     }
 
-    setPendingIntent(intent)
-    pendingIntentRef.current = intent
+    // --- Shared confirmation flow ---
+    setPendingIntent(finalIntent)
+    pendingIntentRef.current = finalIntent
     setState('confirming')
 
-    // Step 2: read back the confirmation
-    const description = describeIntent(intent)
+    const description = describeIntent(finalIntent)
     try {
       await speak(`${description} Say yes to confirm, or no to cancel.`)
     } catch {
       // TTS unavailable — on-screen buttons serve as fallback
     }
 
-    // Step 3: hands-free — listen for "yes" or "no"
     setState('awaiting_confirmation')
     let response: string
     try {
@@ -217,7 +212,7 @@ export function useVoiceCommand(
         response.trim(),
       )
     ) {
-      executeConfirm(intent, raw)
+      executeConfirm(finalIntent, raw)
     } else {
       speak('Okay, no problem. Cancelled.').catch(() => {})
       reset()

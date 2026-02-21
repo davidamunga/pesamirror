@@ -27,17 +27,17 @@ const TYPE_COLOR: Record<ContactType, string> = {
   paybill: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
 }
 
-function examplePhrase(contact: VoiceContact): string {
+function examplePhrases(contact: VoiceContact): Array<string> {
   const type = contact.type ?? 'mobile'
   switch (type) {
     case 'mobile':
-      return `send 500 to ${contact.name}`
+      return [`send 500 to ${contact.name}`]
     case 'pochi':
-      return `pochi 200 to ${contact.name}`
+      return [`pochi 200 to ${contact.name}`, `send 200 to ${contact.name}`]
     case 'till':
-      return `pay ${contact.name} 500`
+      return [`pay ${contact.name} 500`, `send 500 to ${contact.name}`]
     case 'paybill':
-      return `pay ${contact.name} 1000`
+      return [`pay ${contact.name} 1000`, `send 1000 to ${contact.name}`]
   }
 }
 
@@ -70,14 +70,16 @@ export function VoiceCommandDrawer({ onVoiceSubmit }: VoiceCommandDrawerProps) {
 
   const hasContacts = contacts.length > 0
 
-  // Show up to 2 examples per type so the list stays compact
+  // Show up to 1 contact per type, with all its example phrases
   const hints = (
     ['mobile', 'pochi', 'till', 'paybill'] as Array<ContactType>
   ).flatMap((type) =>
     contacts
       .filter((c) => (c.type ?? 'mobile') === type)
-      .slice(0, 2)
-      .map((c) => ({ contact: c, type, phrase: examplePhrase(c) })),
+      .slice(0, 1)
+      .flatMap((c) =>
+        examplePhrases(c).map((phrase) => ({ contact: c, type, phrase })),
+      ),
   )
 
   return (
