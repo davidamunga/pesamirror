@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import type React from 'react'
+  import { useEffect, useState } from 'react'
 import { Mic } from 'lucide-react'
 import type { ParsedIntent } from '@/lib/intent'
 import type { ContactType, VoiceContact } from '@/lib/voice-contacts'
@@ -16,8 +17,10 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer'
 
+
 interface VoiceCommandDrawerProps {
   onVoiceSubmit: (intent: ParsedIntent) => void
+  trigger?: React.ReactNode
 }
 
 const TYPE_COLOR: Record<ContactType, string> = {
@@ -41,7 +44,7 @@ function examplePhrases(contact: VoiceContact): Array<string> {
   }
 }
 
-export function VoiceCommandDrawer({ onVoiceSubmit }: VoiceCommandDrawerProps) {
+export function VoiceCommandDrawer({ onVoiceSubmit, trigger }: VoiceCommandDrawerProps) {
   const [open, setOpen] = useState(false)
   const [contacts, setContacts] = useState<Array<VoiceContact>>([])
 
@@ -85,15 +88,17 @@ export function VoiceCommandDrawer({ onVoiceSubmit }: VoiceCommandDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
       <DrawerTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full gap-3 py-6 text-base font-medium border-dashed hover:border-solid"
-          aria-label="Open voice command"
-        >
-          <Mic className="size-5 shrink-0" />
-          Speak a command
-        </Button>
+        {trigger ?? (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-3 py-6 text-base font-medium border-dashed hover:border-solid"
+            aria-label="Open voice command"
+          >
+            <Mic className="size-5 shrink-0" />
+            Speak a command
+          </Button>
+        )}
       </DrawerTrigger>
 
       <DrawerContent className="max-h-[85svh]">

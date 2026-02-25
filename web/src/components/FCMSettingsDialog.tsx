@@ -45,10 +45,19 @@ function redactPrivateKey(jsonStr: string): string {
 
 interface Props {
   children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function FCMSettingsDialog({ children }: Props) {
-  const [open, setOpen] = React.useState(false)
+export function FCMSettingsDialog({ children, open: openProp, onOpenChange: onOpenChangeProp }: Props) {
+  const isControlled = openProp !== undefined
+  const [localOpen, setLocalOpen] = React.useState(false)
+  const open = isControlled ? openProp! : localOpen
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setLocalOpen(next)
+    onOpenChangeProp?.(next)
+  }
   const [saJson, setSaJson] = React.useState('')
   const [deviceToken, setDeviceToken] = React.useState('')
   const [saved, setSaved] = React.useState(false)
@@ -145,18 +154,20 @@ export function FCMSettingsDialog({ children }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        {children ?? (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="FCM settings"
-            className="text-muted-foreground cursor-pointer hover:text-foreground"
-          >
-            <Settings className="size-5" />
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger>
+          {children ?? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="FCM settings"
+              className="text-muted-foreground cursor-pointer hover:text-foreground"
+            >
+              <Settings className="size-5" />
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-sm">
         <DialogHeader>

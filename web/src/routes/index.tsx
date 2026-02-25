@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowUpRight, Banknote, Building2, Smartphone, Store } from 'lucide-react'
+import { ArrowUpRight, Banknote, Building2, Mic, Smartphone, Store } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -218,6 +218,34 @@ function Home() {
     openSmsApp(body, value.receiver || undefined)
   }
 
+  const voiceSubmitHandler = async (intent: ParsedIntent) => {
+    const config = loadFCMConfig()
+    if (!config) {
+      toast.error('Remote push not configured. Open Settings to set up FCM.')
+      return
+    }
+    const body = buildSmsBody(intent.type as TransactionMode, {
+      phone: 'phone' in intent ? intent.phone : '',
+      till: 'till' in intent ? intent.till : '',
+      business: 'business' in intent ? intent.business : '',
+      account: 'account' in intent ? intent.account : '',
+      agent: 'agent' in intent ? intent.agent : '',
+      store: 'store' in intent ? intent.store : '',
+      amount: intent.amount,
+    })
+    try {
+      await triggerFCMEvent(config, 'ussd-trigger', { body })
+      toast.success('Push sent to device.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Push failed.'
+      toast.error(
+        message.startsWith('FCM error')
+          ? 'Remote push failed. Check internet and FCM settings.'
+          : message,
+      )
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <main className="max-w-lg mx-auto px-4 py-8">
@@ -392,38 +420,6 @@ function Home() {
             )}
           />
 
-          <VoiceCommandDrawer
-            onVoiceSubmit={async (intent: ParsedIntent) => {
-              const config = loadFCMConfig()
-              if (!config) {
-                toast.error(
-                  'Remote push not configured. Open settings to set up FCM.',
-                )
-                return
-              }
-              const body = buildSmsBody(intent.type as TransactionMode, {
-                phone: 'phone' in intent ? intent.phone : '',
-                till: 'till' in intent ? intent.till : '',
-                business: 'business' in intent ? intent.business : '',
-                account: 'account' in intent ? intent.account : '',
-                agent: 'agent' in intent ? intent.agent : '',
-                store: 'store' in intent ? intent.store : '',
-                amount: intent.amount,
-              })
-              try {
-                await triggerFCMEvent(config, 'ussd-trigger', { body })
-                toast.success('Push sent to device.')
-              } catch (err) {
-                const message =
-                  err instanceof Error ? err.message : 'Push failed.'
-                toast.error(
-                  message.startsWith('FCM error')
-                    ? 'Remote push failed. Check internet and FCM settings.'
-                    : message,
-                )
-              }
-            }}
-          />
 
           <div className="space-y-2">
             <Label>Send via</Label>
@@ -510,6 +506,21 @@ function Home() {
           .
         </p>
       </main>
+
+      {/* Floating mic FAB — fixed above bottom nav center */}
+      <VoiceCommandDrawer
+        onVoiceSubmit={voiceSubmitHandler}
+        trigger={
+          <motion.button
+            type="button"
+            className="fixed bottom-[34px] left-1/2 -translate-x-1/2 z-30 flex size-16 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
+            whileTap={{ scale: 0.92 }}
+            aria-label="Speak a voice command"
+          >
+            <Mic className="size-6" />
+          </motion.button>
+        }
+      />
     </div>
   )
 }

@@ -65,8 +65,20 @@ const EMPTY_FORM: FormState = {
   accountNumber: '',
 }
 
-export function VoiceContactsDialog() {
-  const [open, setOpen] = React.useState(false)
+interface VoiceContactsDialogProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export function VoiceContactsDialog({ open: openProp, onOpenChange: onOpenChangeProp }: VoiceContactsDialogProps = {}) {
+  const isControlled = openProp !== undefined
+  const [localOpen, setLocalOpen] = React.useState(false)
+  const open = isControlled ? openProp! : localOpen
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setLocalOpen(next)
+    onOpenChangeProp?.(next)
+  }
   const [contacts, setContacts] = React.useState<Array<VoiceContact>>([])
   const [loading, setLoading] = React.useState(false)
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM)
@@ -248,16 +260,18 @@ export function VoiceContactsDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Voice contacts"
-          className="text-muted-foreground cursor-pointer hover:text-foreground"
-        >
-          <BookUser className="size-5" />
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Voice contacts"
+            className="text-muted-foreground cursor-pointer hover:text-foreground"
+          >
+            <BookUser className="size-5" />
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-sm">
         <DialogHeader>
